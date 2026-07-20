@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#060912" />
-  <title>Hyperliquid · Liquid Glass</title>
+  <meta name="theme-color" content="#05070f" />
+  <title>Hyperliquid · Terminal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -38,7 +38,7 @@
         </div>
         <div>
           <div class="brand-title">Hyperliquid</div>
-          <div class="brand-sub">Liquid Glass · Portfolio</div>
+          <div class="brand-sub">Liquid Glass Terminal</div>
         </div>
       </div>
 
@@ -48,17 +48,8 @@
             <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
           </svg>
           <input id="address" name="address" type="text" spellcheck="false"
-                 placeholder="Paste 0x address…" inputmode="text" />
-          <kbd class="kbd">↵</kbd>
+                 placeholder="0x wallet (portfolio)…" />
         </div>
-        <select id="period" class="glass-inset select" title="Equity period">
-          <option value="day">Day</option>
-          <option value="week" selected>Week</option>
-          <option value="month">Month</option>
-          <option value="allTime">All time</option>
-          <option value="perpWeek">Perp week</option>
-          <option value="perpAllTime">Perp all</option>
-        </select>
         <button type="submit" class="btn primary" id="load-btn">
           <span class="btn-label">Load</span>
           <span class="btn-spinner" hidden></span>
@@ -73,189 +64,211 @@
       <div class="top-meta">
         <span class="pill net" id="network-pill"><i class="pulse"></i>mainnet</span>
         <span class="pill muted" id="status-pill">idle</span>
+        <span class="pill live" id="ws-pill" title="WebSocket">WS · —</span>
       </div>
     </header>
 
-    <main id="main" class="main">
-      <section class="hero empty-state glass glass-lift" id="empty">
-        <div class="empty-visual">
-          <div class="empty-ring r1"></div>
-          <div class="empty-ring r2"></div>
-          <div class="empty-orb"></div>
+    <nav class="tabs glass" id="tabs" role="tablist">
+      <button class="tab active" data-tab="portfolio">Portfolio</button>
+      <button class="tab" data-tab="markets">Markets</button>
+      <button class="tab" data-tab="live">Live</button>
+      <button class="tab" data-tab="analytics">Analytics</button>
+      <button class="tab" data-tab="tools">Tools</button>
+    </nav>
+
+    <main class="main">
+      <!-- ═══════════════ PORTFOLIO ═══════════════ -->
+      <section class="panel" id="panel-portfolio">
+        <div class="hero empty-state glass glass-lift" id="empty">
+          <div class="empty-visual">
+            <div class="empty-ring r1"></div>
+            <div class="empty-ring r2"></div>
+            <div class="empty-orb"></div>
+          </div>
+          <h1>Portfolio cockpit</h1>
+          <p>Paste a wallet for risk, positions, equity &amp; fills — or open Markets / Live without one.</p>
+          <div class="empty-chips">
+            <span>Risk score</span><span>Distance to liq</span><span>Equity curve</span><span>Funding paid</span>
+          </div>
         </div>
-        <h1>See your book through glass</h1>
-        <p>Account value, liquidation distance, equity curve, funding and fills — a liquid-glass cockpit for Hyperliquid.</p>
-        <div class="empty-chips">
-          <span>Risk score</span>
-          <span>Distance to liq</span>
-          <span>Equity history</span>
-          <span>PnL by coin</span>
+        <div id="skeleton" class="dashboard skeleton-wrap" hidden>
+          <section class="grid kpis">
+            <div class="card glass skel"></div><div class="card glass skel"></div>
+            <div class="card glass skel"></div><div class="card glass skel"></div>
+          </section>
         </div>
-        <p class="hint">Read-only · no private key</p>
-      </section>
+        <div id="dashboard" class="dashboard" hidden>
+          <section class="grid kpis">
+            <article class="card glass glass-lift kpi accent-blue">
+              <div class="kpi-top"><div class="kpi-icon">◈</div><div class="kpi-label">Account Value</div></div>
+              <div class="kpi-value mono" id="kpi-av">—</div>
+              <div class="kpi-sub mono" id="kpi-addr">—</div>
+            </article>
+            <article class="card glass glass-lift kpi accent-cyan">
+              <div class="kpi-top"><div class="kpi-icon">↓</div><div class="kpi-label">Withdrawable</div></div>
+              <div class="kpi-value mono" id="kpi-wd">—</div>
+              <div class="kpi-sub" id="kpi-free">free margin</div>
+              <div class="meter" id="free-meter"><i></i></div>
+            </article>
+            <article class="card glass glass-lift kpi accent-violet">
+              <div class="kpi-top"><div class="kpi-icon">▣</div><div class="kpi-label">Margin Used</div></div>
+              <div class="kpi-value mono" id="kpi-mu">—</div>
+              <div class="kpi-sub" id="kpi-mu-pct">—</div>
+              <div class="meter" id="margin-meter"><i></i></div>
+            </article>
+            <article class="card glass glass-lift kpi accent-pnl">
+              <div class="kpi-top"><div class="kpi-icon">↗</div><div class="kpi-label">Unrealized PnL</div></div>
+              <div class="kpi-value mono" id="kpi-upnl">—</div>
+              <div class="kpi-sub" id="kpi-mode">—</div>
+            </article>
+          </section>
 
-      <!-- Loading skeleton -->
-      <div id="skeleton" class="dashboard skeleton-wrap" hidden>
-        <section class="grid kpis">
-          <div class="card glass skel"></div>
-          <div class="card glass skel"></div>
-          <div class="card glass skel"></div>
-          <div class="card glass skel"></div>
-        </section>
-        <section class="grid two">
-          <div class="card glass skel tall"></div>
-          <div class="card glass skel tall"></div>
-        </section>
-        <div class="card glass skel mid"></div>
-      </div>
+          <section class="grid two">
+            <article class="card glass glass-lift">
+              <div class="card-head">
+                <div><div class="eyebrow">Exposure</div><h2>Risk View</h2></div>
+                <span class="risk-badge" id="risk-level">—</span>
+              </div>
+              <div class="risk-score-row">
+                <div class="score-ring">
+                  <svg viewBox="0 0 120 120">
+                    <defs>
+                      <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#5eefc8"/><stop offset="55%" stop-color="#6cb6ff"/><stop offset="100%" stop-color="#c4a0ff"/>
+                      </linearGradient>
+                    </defs>
+                    <circle class="ring-bg" cx="60" cy="60" r="52"/>
+                    <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="52"/>
+                  </svg>
+                  <div class="score-center">
+                    <div class="score-num mono" id="risk-score">0</div>
+                    <div class="score-cap">/ 100</div>
+                  </div>
+                </div>
+                <div class="risk-stats">
+                  <div class="stat glass-inset mini"><span>Eff. lev</span><strong class="mono" id="risk-lev">—</strong></div>
+                  <div class="stat glass-inset mini"><span>Margin</span><strong class="mono" id="risk-mu">—</strong></div>
+                  <div class="stat glass-inset mini"><span>Free</span><strong class="mono" id="risk-free">—</strong></div>
+                  <div class="stat glass-inset mini"><span>Closest liq</span><strong class="mono" id="risk-closest">—</strong></div>
+                </div>
+              </div>
+              <ul class="notes" id="risk-notes"></ul>
+              <div class="table-wrap">
+                <table class="data" id="risk-table">
+                  <thead><tr><th>Coin</th><th>Side</th><th>Dist</th><th class="num">Buf</th><th class="num">Liq</th><th class="num">Mark</th><th class="num">uPnL</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </article>
 
-      <div id="dashboard" class="dashboard" hidden>
-        <!-- Overview KPIs -->
-        <section class="grid kpis">
-          <article class="card glass glass-lift kpi accent-blue reveal" style="--d:0">
-            <div class="kpi-top">
-              <div class="kpi-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg>
+            <article class="card glass glass-lift">
+              <div class="card-head">
+                <div><div class="eyebrow">Performance</div><h2>Equity Curve</h2></div>
+                <select id="period" class="glass-inset select sm">
+                  <option value="day">Day</option>
+                  <option value="week" selected>Week</option>
+                  <option value="month">Month</option>
+                  <option value="allTime">All time</option>
+                  <option value="perpWeek">Perp week</option>
+                </select>
               </div>
-              <div class="kpi-label">Account Value</div>
-            </div>
-            <div class="kpi-value mono" id="kpi-av">—</div>
-            <div class="kpi-sub mono" id="kpi-addr">—</div>
-          </article>
-          <article class="card glass glass-lift kpi accent-cyan reveal" style="--d:1">
-            <div class="kpi-top">
-              <div class="kpi-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/></svg>
-              </div>
-              <div class="kpi-label">Withdrawable</div>
-            </div>
-            <div class="kpi-value mono" id="kpi-wd">—</div>
-            <div class="kpi-sub" id="kpi-free">free margin</div>
-            <div class="meter" id="free-meter"><i></i></div>
-          </article>
-          <article class="card glass glass-lift kpi accent-violet reveal" style="--d:2">
-            <div class="kpi-top">
-              <div class="kpi-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 14h8M8 10h5"/></svg>
-              </div>
-              <div class="kpi-label">Margin Used</div>
-            </div>
-            <div class="kpi-value mono" id="kpi-mu">—</div>
-            <div class="kpi-sub" id="kpi-mu-pct">—</div>
-            <div class="meter" id="margin-meter"><i></i></div>
-          </article>
-          <article class="card glass glass-lift kpi accent-pnl reveal" style="--d:3">
-            <div class="kpi-top">
-              <div class="kpi-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 16l5-5 4 4 7-8"/><path d="M15 7h5v5"/></svg>
-              </div>
-              <div class="kpi-label">Unrealized PnL</div>
-            </div>
-            <div class="kpi-value mono" id="kpi-upnl">—</div>
-            <div class="kpi-sub" id="kpi-mode">—</div>
-          </article>
-        </section>
+              <div class="equity-summary" id="equity-summary"></div>
+              <div class="chart-wrap"><canvas id="equity-chart"></canvas><div class="chart-cross" id="chart-tip" hidden></div></div>
+              <div class="period-grid" id="period-grid"></div>
+            </article>
+          </section>
 
-        <!-- Risk + Equity -->
-        <section class="grid two">
-          <article class="card glass glass-lift risk-card reveal" style="--d:4">
+          <section class="card glass glass-lift">
             <div class="card-head">
-              <div>
-                <div class="eyebrow">Exposure</div>
-                <h2>Risk View</h2>
-              </div>
-              <span class="risk-badge" id="risk-level">—</span>
+              <div><div class="eyebrow">Book</div><h2>Positions <span class="count" id="pos-count"></span></h2></div>
+              <button type="button" class="btn sm" id="export-pos">Export CSV</button>
             </div>
-            <div class="risk-score-row">
-              <div class="score-ring" id="score-ring">
-                <svg viewBox="0 0 120 120">
-                  <defs>
-                    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#5eefc8"/>
-                      <stop offset="55%" stop-color="#6cb6ff"/>
-                      <stop offset="100%" stop-color="#c4a0ff"/>
-                    </linearGradient>
-                  </defs>
-                  <circle class="ring-bg" cx="60" cy="60" r="52"/>
-                  <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="52"/>
-                </svg>
-                <div class="score-center">
-                  <div class="score-num mono" id="risk-score">0</div>
-                  <div class="score-cap">/ 100</div>
-                </div>
-              </div>
-              <div class="risk-stats">
-                <div class="stat glass-inset mini">
-                  <span>Eff. leverage</span><strong class="mono" id="risk-lev">—</strong>
-                </div>
-                <div class="stat glass-inset mini">
-                  <span>Margin used</span><strong class="mono" id="risk-mu">—</strong>
-                </div>
-                <div class="stat glass-inset mini">
-                  <span>Free margin</span><strong class="mono" id="risk-free">—</strong>
-                </div>
-                <div class="stat glass-inset mini">
-                  <span>Closest to liq</span><strong class="mono" id="risk-closest">—</strong>
-                </div>
-              </div>
-            </div>
-            <ul class="notes" id="risk-notes"></ul>
-            <div class="table-wrap">
-              <table class="data" id="risk-table">
+            <div class="table-wrap wide">
+              <table class="data" id="pos-table">
                 <thead>
                   <tr>
-                    <th>Coin</th><th>Side</th><th>Dist→Liq</th><th class="num">Buffer</th><th class="num">Liq</th><th class="num">Mark</th><th class="num">uPnL</th>
+                    <th>Coin</th><th>Side</th><th class="num">Size</th><th class="num">Entry</th><th class="num">Mark</th>
+                    <th class="num">uPnL</th><th class="num">ROE</th><th class="num">Liq</th><th class="num">Dist%</th>
+                    <th class="num">Fund open</th><th class="num">Fund all</th><th>Mode</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
               </table>
             </div>
-          </article>
+          </section>
 
-          <article class="card glass glass-lift equity-card reveal" style="--d:5">
-            <div class="card-head">
-              <div>
-                <div class="eyebrow">Performance</div>
-                <h2>Equity Curve</h2>
+          <section class="grid two">
+            <article class="card glass glass-lift">
+              <div class="card-head"><div><div class="eyebrow">Live</div><h2>Open Orders <span class="count" id="oo-count"></span></h2></div></div>
+              <div class="table-wrap"><table class="data" id="oo-table"><thead><tr><th>Coin</th><th>Side</th><th class="num">Size</th><th class="num">Limit</th><th>Type</th><th>Time</th></tr></thead><tbody></tbody></table></div>
+            </article>
+            <article class="card glass glass-lift">
+              <div class="card-head"><div><div class="eyebrow">History</div><h2>Historical Orders <span class="count" id="ho-count"></span></h2></div></div>
+              <div class="table-wrap"><table class="data" id="ho-table"><thead><tr><th>Coin</th><th>Side</th><th class="num">Size</th><th class="num">Limit</th><th>Status</th><th>Time</th></tr></thead><tbody></tbody></table></div>
+            </article>
+          </section>
+
+          <section class="grid two">
+            <article class="card glass glass-lift">
+              <div class="card-head"><div><div class="eyebrow">Realized</div><h2>PnL by Coin</h2></div></div>
+              <div class="table-wrap"><table class="data" id="pnl-table"><thead><tr><th>Coin</th><th class="num">Closed</th><th class="num">Fees</th><th class="num">Net</th><th class="num">Vol</th><th class="num">Fills</th></tr></thead><tbody></tbody></table></div>
+            </article>
+            <article class="card glass glass-lift">
+              <div class="card-head"><div><div class="eyebrow">Allocations</div><h2>Subs &amp; Vaults</h2></div></div>
+              <div class="split-lists">
+                <div><h3>Subaccounts</h3><ul class="plain" id="subs-list"></ul></div>
+                <div><h3>Vault equities</h3><ul class="plain" id="vaults-list"></ul></div>
               </div>
-            </div>
-            <div class="equity-summary" id="equity-summary"></div>
-            <div class="chart-wrap">
-              <canvas id="equity-chart"></canvas>
-              <div class="chart-cross" id="chart-tip" hidden></div>
-            </div>
-            <div class="period-grid" id="period-grid"></div>
+            </article>
+          </section>
+        </div>
+      </section>
+
+      <!-- ═══════════════ MARKETS ═══════════════ -->
+      <section class="panel" id="panel-markets" hidden>
+        <div class="toolbar glass">
+          <input id="mkt-filter" class="glass-inset search-inline" placeholder="Filter coin…" />
+          <select id="mkt-sort" class="glass-inset select sm">
+            <option value="volume_24h">Volume 24h</option>
+            <option value="funding_pct">Funding high→low</option>
+            <option value="funding_pct_asc">Funding low→high</option>
+            <option value="open_interest_usd">Open interest</option>
+            <option value="change_24h_pct">24h change</option>
+            <option value="coin">Name</option>
+          </select>
+          <button type="button" class="btn sm primary" id="mkt-refresh">Refresh markets</button>
+          <button type="button" class="btn sm" id="mkt-export">CSV</button>
+          <span class="hint-inline" id="mkt-meta">—</span>
+        </div>
+
+        <section class="grid kpis four-sm" id="mkt-stats"></section>
+
+        <section class="grid two">
+          <article class="card glass glass-lift">
+            <div class="card-head"><div><div class="eyebrow">Funding</div><h2>Heatmap</h2></div></div>
+            <div class="heatmap" id="funding-heatmap"></div>
+          </article>
+          <article class="card glass glass-lift">
+            <div class="card-head"><div><div class="eyebrow">Ideas</div><h2>Top funding opportunities</h2></div></div>
+            <div class="table-wrap"><table class="data" id="opp-table">
+              <thead><tr><th>Coin</th><th>Side</th><th class="num">Fund %/h</th><th class="num">APR</th><th class="num">Vol</th><th>Thesis</th></tr></thead>
+              <tbody></tbody>
+            </table></div>
           </article>
         </section>
 
-        <!-- Positions -->
-        <section class="card glass glass-lift reveal" style="--d:6">
+        <section class="card glass glass-lift">
           <div class="card-head">
-            <div>
-              <div class="eyebrow">Book</div>
-              <h2>Positions <span class="count" id="pos-count"></span></h2>
-            </div>
-            <div class="legend">
-              <span><i class="dot long"></i>Long</span>
-              <span><i class="dot short"></i>Short</span>
-            </div>
+            <div><div class="eyebrow">Perps</div><h2>Market overview</h2></div>
+            <div class="legend"><span><i class="dot long"></i>+ funding</span><span><i class="dot short"></i>− funding</span></div>
           </div>
           <div class="table-wrap wide">
-            <table class="data" id="pos-table">
+            <table class="data" id="mkt-table">
               <thead>
                 <tr>
-                  <th>Coin</th>
-                  <th>Side</th>
-                  <th class="num">Size</th>
-                  <th class="num">Entry</th>
-                  <th class="num">Mark</th>
-                  <th class="num">uPnL</th>
-                  <th class="num">ROE</th>
-                  <th class="num">Liq</th>
-                  <th class="num">Dist%</th>
-                  <th class="num">Fund open</th>
-                  <th class="num">Fund all</th>
-                  <th>Mode</th>
+                  <th>Coin</th><th class="num">Mark</th><th class="num">24h %</th>
+                  <th class="num">Funding %/h</th><th class="num">APR</th>
+                  <th class="num">OI $</th><th class="num">Vol 24h</th><th></th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -263,98 +276,157 @@
           </div>
         </section>
 
-        <!-- Orders -->
         <section class="grid two">
-          <article class="card glass glass-lift reveal" style="--d:7">
+          <article class="card glass glass-lift">
+            <div class="card-head"><div><div class="eyebrow">Cross-venue</div><h2>Predicted fundings</h2></div>
+              <button type="button" class="btn sm" id="pred-refresh">Load</button>
+            </div>
+            <div class="table-wrap"><table class="data" id="pred-table">
+              <thead><tr><th>Coin</th><th class="num">HL %/h</th><th class="num">Bin</th><th class="num">Bybit</th><th class="num">HL−Bin</th></tr></thead>
+              <tbody></tbody>
+            </table></div>
+          </article>
+          <article class="card glass glass-lift">
             <div class="card-head">
-              <div>
-                <div class="eyebrow">Live</div>
-                <h2>Open Orders <span class="count" id="oo-count"></span></h2>
+              <div><div class="eyebrow">History</div><h2>Funding history</h2></div>
+              <div class="row-actions">
+                <input id="fh-coin" class="glass-inset search-inline sm" value="BTC" />
+                <button type="button" class="btn sm" id="fh-load">Load</button>
               </div>
             </div>
-            <div class="table-wrap">
-              <table class="data" id="oo-table">
-                <thead>
-                  <tr>
-                    <th>Coin</th><th>Side</th><th class="num">Size</th>
-                    <th class="num">Limit</th><th>Type</th><th>Time</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+            <div class="chart-wrap short"><canvas id="funding-chart"></canvas></div>
+          </article>
+        </section>
+      </section>
+
+      <!-- ═══════════════ LIVE ═══════════════ -->
+      <section class="panel" id="panel-live" hidden>
+        <div class="toolbar glass">
+          <div class="watchlist" id="watchlist"></div>
+          <input id="live-coin" class="glass-inset search-inline sm" list="coin-list" value="BTC" />
+          <datalist id="coin-list"></datalist>
+          <select id="live-interval" class="glass-inset select sm">
+            <option value="1m">1m</option>
+            <option value="5m">5m</option>
+            <option value="15m" selected>15m</option>
+            <option value="1h">1h</option>
+            <option value="4h">4h</option>
+          </select>
+          <button type="button" class="btn sm primary" id="live-set-coin">Subscribe</button>
+          <button type="button" class="btn sm" id="wl-add">+ Watch</button>
+          <label class="chk"><input type="checkbox" id="whale-only" /> Whales only</label>
+          <span class="hint-inline" id="live-status">connecting…</span>
+        </div>
+
+        <section class="grid live-grid">
+          <article class="card glass glass-lift">
+            <div class="card-head"><div><div class="eyebrow">Book</div><h2 id="book-title">Order book</h2></div>
+              <span class="mono mid-px" id="live-mid">—</span>
+            </div>
+            <div class="ob" id="orderbook">
+              <div class="ob-side asks" id="ob-asks"></div>
+              <div class="ob-spread mono" id="ob-spread">—</div>
+              <div class="ob-side bids" id="ob-bids"></div>
             </div>
           </article>
-          <article class="card glass glass-lift reveal" style="--d:8">
-            <div class="card-head">
-              <div>
-                <div class="eyebrow">History</div>
-                <h2>Historical Orders <span class="count" id="ho-count"></span></h2>
-              </div>
+
+          <article class="card glass glass-lift">
+            <div class="card-head"><div><div class="eyebrow">Tape</div><h2>Trades</h2></div></div>
+            <div class="tape" id="trade-tape"></div>
+          </article>
+
+          <article class="card glass glass-lift">
+            <div class="card-head"><div><div class="eyebrow">Flow</div><h2>Whale trades</h2></div>
+              <span class="hint-inline" id="whale-thr">≥ $75k</span>
             </div>
-            <div class="table-wrap">
-              <table class="data" id="ho-table">
-                <thead>
-                  <tr>
-                    <th>Coin</th><th>Side</th><th class="num">Size</th>
-                    <th class="num">Limit</th><th>Status</th><th>Time</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
+            <div class="tape whales" id="whale-tape"></div>
           </article>
         </section>
 
-        <!-- PnL + Subs/Vaults -->
-        <section class="grid two">
-          <article class="card glass glass-lift reveal" style="--d:9">
-            <div class="card-head">
-              <div>
-                <div class="eyebrow">Realized</div>
-                <h2>PnL by Coin</h2>
+        <section class="card glass glass-lift">
+          <div class="card-head"><div><div class="eyebrow">Candles</div><h2 id="candle-title">BTC · 15m</h2></div></div>
+          <div class="chart-wrap tall"><canvas id="candle-chart"></canvas></div>
+        </section>
+      </section>
+
+      <!-- ═══════════════ ANALYTICS ═══════════════ -->
+      <section class="panel" id="panel-analytics" hidden>
+        <div class="hero empty-state glass" id="an-empty">
+          <h1>Load a wallet first</h1>
+          <p>Analytics use recent fills + open positions from the Portfolio tab.</p>
+        </div>
+        <div id="an-body" class="dashboard" hidden>
+          <section class="grid kpis" id="an-kpis"></section>
+          <section class="grid two">
+            <article class="card glass glass-lift">
+              <div class="card-head"><div><div class="eyebrow">Trades</div><h2>Best / worst</h2></div></div>
+              <div id="an-best-worst" class="bw-grid"></div>
+            </article>
+            <article class="card glass glass-lift">
+              <div class="card-head"><div><div class="eyebrow">Simulator</div><h2>Risk calculator</h2></div></div>
+              <p class="hint-inline" style="margin-bottom:12px">Parallel move of all marks by X%.</p>
+              <div class="row-actions" style="margin-bottom:12px">
+                <input type="range" id="risk-range" min="-20" max="20" step="0.5" value="-5" />
+                <span class="mono" id="risk-range-label">-5%</span>
+                <button type="button" class="btn sm primary" id="risk-run">Run</button>
               </div>
-              <span class="hint-inline">recent fills</span>
-            </div>
-            <div class="table-wrap">
-              <table class="data" id="pnl-table">
-                <thead>
-                  <tr>
-                    <th>Coin</th>
-                    <th class="num">Closed</th>
-                    <th class="num">Fees</th>
-                    <th class="num">Net</th>
-                    <th class="num">Vol</th>
-                    <th class="num">Fills</th>
-                  </tr>
-                </thead>
+              <div id="risk-result"></div>
+              <div class="table-wrap" style="margin-top:10px"><table class="data" id="risk-pos-table">
+                <thead><tr><th>Coin</th><th>Side</th><th class="num">Impact</th><th class="num">New dist%</th></tr></thead>
                 <tbody></tbody>
-              </table>
-            </div>
+              </table></div>
+            </article>
+          </section>
+          <section class="card glass glass-lift">
+            <div class="card-head"><div><div class="eyebrow">Fees</div><h2>Fee tier &amp; volume</h2></div></div>
+            <pre class="code-block mono" id="fees-block">—</pre>
+          </section>
+        </div>
+      </section>
+
+      <!-- ═══════════════ TOOLS ═══════════════ -->
+      <section class="panel" id="panel-tools" hidden>
+        <section class="grid two">
+          <article class="card glass glass-lift">
+            <div class="card-head"><div><div class="eyebrow">Multi-wallet</div><h2>Compare addresses</h2></div></div>
+            <textarea id="compare-addrs" class="glass-inset ta" rows="4" placeholder="One 0x address per line"></textarea>
+            <button type="button" class="btn primary sm" id="compare-run" style="margin-top:10px">Compare</button>
+            <div class="table-wrap" style="margin-top:12px"><table class="data" id="compare-table">
+              <thead><tr><th>Address</th><th class="num">AV</th><th class="num">uPnL</th><th class="num">Margin%</th><th class="num">Lev</th><th>Risk</th></tr></thead>
+              <tbody></tbody>
+            </table></div>
           </article>
-          <article class="card glass glass-lift reveal" style="--d:10">
-            <div class="card-head">
-              <div>
-                <div class="eyebrow">Allocations</div>
-                <h2>Subaccounts &amp; Vaults</h2>
-              </div>
+          <article class="card glass glass-lift">
+            <div class="card-head"><div><div class="eyebrow">Alerts</div><h2>Local alert rules</h2></div></div>
+            <p class="hint-inline">Stored in your browser. Checked on portfolio / market refresh.</p>
+            <div class="alert-form">
+              <select id="alert-type" class="glass-inset select sm">
+                <option value="funding">Funding |rate| ≥</option>
+                <option value="liq">Distance to liq ≤</option>
+                <option value="upnl">|uPnL| ≥ $</option>
+              </select>
+              <input id="alert-val" class="glass-inset search-inline sm" value="0.05" />
+              <input id="alert-coin" class="glass-inset search-inline sm" placeholder="coin (opt)" />
+              <button type="button" class="btn sm" id="alert-add">Add</button>
             </div>
-            <div class="split-lists">
-              <div>
-                <h3>Subaccounts</h3>
-                <ul class="plain" id="subs-list"></ul>
-              </div>
-              <div>
-                <h3>Vault equities</h3>
-                <ul class="plain" id="vaults-list"></ul>
-              </div>
-            </div>
+            <ul class="plain" id="alert-list"></ul>
+            <div id="alert-hits" class="alert-hits"></div>
           </article>
         </section>
-      </div>
+        <article class="card glass glass-lift">
+          <div class="card-head"><div><div class="eyebrow">Vault</div><h2>Vault details</h2></div>
+            <div class="row-actions">
+              <input id="vault-addr" class="glass-inset search-inline" placeholder="0x vault address" value="0xdfc24b077bc1425ad1dea75bcb6f8158e10df303" />
+              <button type="button" class="btn sm primary" id="vault-load">Load</button>
+            </div>
+          </div>
+          <pre class="code-block mono" id="vault-block">—</pre>
+        </article>
+      </section>
     </main>
 
     <footer class="footer">
-      <span class="footer-brand">Hyperliquid · liquid glass</span>
+      <span class="footer-brand">HL · liquid glass terminal</span>
       <span id="fetched-at"></span>
     </footer>
   </div>
